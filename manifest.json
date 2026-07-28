@@ -1,0 +1,12 @@
+{
+  "name": "Primitive Token Generator",
+  "id": "1530943669698600000",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

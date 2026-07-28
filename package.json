@@ -1,0 +1,32 @@
+{
+  "name": "primitive-token-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generate a stable, accessible Figma Variables library of primitive design tokens.",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:main && vite build",
+    "build:main": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2020",
+    "dev": "vite build --watch",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "verify:bundle": "node scripts/release-check.mjs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run verify:bundle"
+  },
+  "dependencies": {
+    "culori": "^4.0.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.117.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "esbuild": "^0.25.9",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.4",
+    "vite-plugin-singlefile": "^2.3.0",
+    "vitest": "^3.2.4"
+  }
+}
