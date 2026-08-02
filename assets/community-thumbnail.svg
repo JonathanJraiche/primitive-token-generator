@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="90" x2="1740" y2="990" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8F9FC"/>
+      <stop offset="1" stop-color="#E8EDFF"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="30" stdDeviation="35" flood-color="#18234A" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <circle cx="1780" cy="120" r="260" fill="#DCE5FF"/>
+  <circle cx="104" cy="1012" r="220" fill="#EDF1FF"/>
+
+  <g transform="translate(144 160)">
+    <g>
+      <rect width="72" height="72" rx="17" fill="#2D5BFF"/>
+      <rect x="16" y="16" width="17" height="17" rx="5" fill="#FFFFFF"/>
+      <rect x="39" y="16" width="17" height="17" rx="5" fill="#AFC2FF"/>
+      <rect x="16" y="39" width="17" height="17" rx="5" fill="#AFC2FF"/>
+      <rect x="39" y="39" width="17" height="17" rx="5" fill="#FFFFFF"/>
+    </g>
+    <text x="0" y="176" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="88" font-weight="750" letter-spacing="-3">Primitives</text>
+    <text x="2" y="235" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="450">Token Generator for Figma</text>
+    <text x="2" y="344" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="48" font-weight="650" letter-spacing="-1.2">A complete token library</text>
+    <text x="2" y="400" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="48" font-weight="650" letter-spacing="-1.2">from one color.</text>
+    <text x="2" y="478" fill="#667085" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="450">Generate stable color, spacing, typography,</text>
+    <text x="2" y="516" fill="#667085" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="450">and radius Variables—then place the guide.</text>
+
+    <g transform="translate(0 590)">
+      <rect width="158" height="50" rx="25" fill="#E2E9FF"/>
+      <text x="79" y="33" text-anchor="middle" fill="#294BBB" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="650">LOCAL-FIRST</text>
+      <rect x="174" width="164" height="50" rx="25" fill="#E2E9FF"/>
+      <text x="256" y="33" text-anchor="middle" fill="#294BBB" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="650">ACCESSIBLE</text>
+      <rect x="354" width="192" height="50" rx="25" fill="#E2E9FF"/>
+      <text x="450" y="33" text-anchor="middle" fill="#294BBB" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="650">DETERMINISTIC</text>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)" transform="translate(840 104)">
+    <rect width="936" height="872" rx="34" fill="#FFFFFF"/>
+    <rect width="936" height="88" rx="34" fill="#FFFFFF"/>
+    <path d="M0 88H936" stroke="#E4E7EC"/>
+    <rect x="30" y="26" width="36" height="36" rx="9" fill="#2D5BFF"/>
+    <path d="M48 31L50.7 39.3L59 42L50.7 44.7L48 53L45.3 44.7L37 42L45.3 39.3L48 31Z" fill="#FFFFFF"/>
+    <text x="80" y="49" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Primitives</text>
+    <text x="80" y="68" fill="#8A91A1" font-family="Inter, Arial, sans-serif" font-size="12">Token Generator</text>
+    <rect x="744" y="24" width="162" height="40" rx="20" fill="#EEF2FF"/>
+    <circle cx="765" cy="44" r="5" fill="#20A66A"/>
+    <text x="780" y="50" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">Library linked</text>
+
+    <rect x="28" y="116" width="244" height="710" rx="18" fill="#F8F9FB" stroke="#E4E7EC"/>
+    <text x="52" y="156" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Color</text>
+    <g transform="translate(52 181)">
+      <rect width="52" height="52" rx="12" fill="#2D5BFF"/>
+      <rect x="62" width="52" height="52" rx="12" fill="#7C3AED"/>
+      <rect x="124" width="52" height="52" rx="12" fill="#059669"/>
+    </g>
+    <text x="52" y="276" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">Seed color</text>
+    <rect x="52" y="291" width="196" height="44" rx="10" fill="#FFFFFF" stroke="#D9DDE7"/>
+    <circle cx="75" cy="313" r="11" fill="#2D5BFF"/>
+    <text x="96" y="319" fill="#161A24" font-family="ui-monospace, monospace" font-size="14">#2D5BFF</text>
+    <text x="52" y="375" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">Harmony</text>
+    <rect x="52" y="390" width="196" height="44" rx="10" fill="#FFFFFF" stroke="#D9DDE7"/>
+    <text x="68" y="418" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="14">Analogous</text>
+    <text x="52" y="478" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">Scale preset</text>
+    <rect x="52" y="493" width="196" height="44" rx="10" fill="#FFFFFF" stroke="#D9DDE7"/>
+    <text x="68" y="521" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="14">Balanced</text>
+    <rect x="52" y="752" width="196" height="44" rx="10" fill="#2D5BFF"/>
+    <text x="150" y="780" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">Save library</text>
+
+    <g transform="translate(302 124)">
+      <text x="0" y="30" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="750">Generated palette</text>
+      <text x="0" y="58" fill="#7B8290" font-family="Inter, Arial, sans-serif" font-size="13">OKLCH · hue-preserving sRGB mapping</text>
+
+      <g transform="translate(0 92)">
+        <text x="0" y="17" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="650">brand</text>
+        <rect y="32" width="50" height="78" rx="10" fill="#F3F6FF"/>
+        <rect x="58" y="32" width="50" height="78" rx="10" fill="#D5E0FF"/>
+        <rect x="116" y="32" width="50" height="78" rx="10" fill="#AFC2FF"/>
+        <rect x="174" y="32" width="50" height="78" rx="10" fill="#7899FF"/>
+        <rect x="232" y="32" width="50" height="78" rx="10" fill="#2D5BFF"/>
+        <rect x="290" y="32" width="50" height="78" rx="10" fill="#2449DB"/>
+        <rect x="348" y="32" width="50" height="78" rx="10" fill="#1C39B5"/>
+        <rect x="406" y="32" width="50" height="78" rx="10" fill="#152A8D"/>
+        <rect x="464" y="32" width="50" height="78" rx="10" fill="#111C5D"/>
+        <rect x="522" y="32" width="50" height="78" rx="10" fill="#11131F"/>
+      </g>
+
+      <g transform="translate(0 246)">
+        <text x="0" y="17" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="650">harmony</text>
+        <rect y="32" width="50" height="78" rx="10" fill="#F4FBFF"/>
+        <rect x="58" y="32" width="50" height="78" rx="10" fill="#CBEAFF"/>
+        <rect x="116" y="32" width="50" height="78" rx="10" fill="#90D1F4"/>
+        <rect x="174" y="32" width="50" height="78" rx="10" fill="#49ACDA"/>
+        <rect x="232" y="32" width="50" height="78" rx="10" fill="#0787B5"/>
+        <rect x="290" y="32" width="50" height="78" rx="10" fill="#006B94"/>
+        <rect x="348" y="32" width="50" height="78" rx="10" fill="#005173"/>
+        <rect x="406" y="32" width="50" height="78" rx="10" fill="#003A55"/>
+        <rect x="464" y="32" width="50" height="78" rx="10" fill="#032A39"/>
+        <rect x="522" y="32" width="50" height="78" rx="10" fill="#16191B"/>
+      </g>
+
+      <g transform="translate(0 410)">
+        <rect width="182" height="136" rx="16" fill="#F8F9FB" stroke="#E4E7EC"/>
+        <text x="18" y="30" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650">SPACING</text>
+        <rect x="18" y="52" width="24" height="12" rx="4" fill="#2D5BFF"/>
+        <rect x="18" y="74" width="56" height="12" rx="4" fill="#2D5BFF"/>
+        <rect x="18" y="96" width="108" height="12" rx="4" fill="#2D5BFF"/>
+
+        <rect x="198" width="182" height="136" rx="16" fill="#F8F9FB" stroke="#E4E7EC"/>
+        <text x="216" y="30" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650">TYPE SCALE</text>
+        <text x="216" y="70" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="650">Aa</text>
+        <text x="258" y="79" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="650">Aa</text>
+        <text x="320" y="91" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="650">Aa</text>
+
+        <rect x="396" width="182" height="136" rx="16" fill="#F8F9FB" stroke="#E4E7EC"/>
+        <text x="414" y="30" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650">RADIUS</text>
+        <rect x="414" y="53" width="55" height="55" rx="4" fill="#DCE5FF" stroke="#2D5BFF"/>
+        <rect x="486" y="53" width="55" height="55" rx="14" fill="#DCE5FF" stroke="#2D5BFF"/>
+      </g>
+
+      <g transform="translate(0 580)">
+        <rect width="578" height="70" rx="14" fill="#F8F9FB" stroke="#E4E7EC"/>
+        <circle cx="30" cy="35" r="8" fill="#20A66A"/>
+        <text x="52" y="31" fill="#161A24" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">202 variables ready</text>
+        <text x="52" y="50" fill="#7B8290" font-family="Inter, Arial, sans-serif" font-size="11">Stable IDs · AA contrast guarantees · DTCG export</text>
+        <rect x="428" y="15" width="130" height="40" rx="10" fill="#2D5BFF"/>
+        <text x="493" y="41" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700">Place guide</text>
+      </g>
+    </g>
+  </g>
+</svg>

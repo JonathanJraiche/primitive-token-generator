@@ -76,6 +76,11 @@ Recommended carousel story:
 
 Avoid showing development menus, temporary copy, debug output, or unfinished canvas content.
 
+Prepared assets:
+
+- `assets/community-icon.png`
+- `assets/community-thumbnail.png`
+
 ## Automated release check
 
 Run:
@@ -116,6 +121,7 @@ Complete these before opening Figma's publish dialog:
 - [ ] Enter the intended public support URL directly in Figma's publishing form.
 - [ ] Confirm the applicable Community license and legal terms.
 - [ ] Decide whether Community comments should be enabled.
-- [ ] Prepare the icon, thumbnail, and any carousel media.
+- [x] Prepare the required icon and thumbnail.
+- [ ] Decide whether to add optional carousel media.
 
 In Figma Desktop, open **Plugins → Manage plugins**, open the plugin menu, choose **Publish**, paste the listing copy, upload the assets, complete the security disclosure, and submit for review.
