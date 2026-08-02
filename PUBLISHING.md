@@ -116,7 +116,7 @@ Complete these before opening Figma's publish dialog:
 
 - [ ] Confirm Figma Desktop is signed in to the intended publishing account.
 - [ ] Enable two-factor authentication on the publishing account.
-- [ ] Decide whether the plugin is free or paid.
+- [x] Publish the plugin for free.
 - [ ] Decide whether to publish as yourself, a team, or an organization.
 - [ ] Enter the intended public support URL directly in Figma's publishing form.
 - [ ] Confirm the applicable Community license and legal terms.
