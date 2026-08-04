@@ -102,7 +102,8 @@ export const SCALE_PRESETS: ScalePreset[] = [
 const DEFAULT_SCALE_PRESET = SCALE_PRESETS.find((preset) => preset.id === 'balanced')!;
 
 export const DEFAULT_CONFIG: TokenConfig = {
-  version: '1.2.0',
+  version: '1.3.0',
+  primitiveLocks: {},
   color: {
     seed: PRESETS[0].seed,
     harmony: PRESETS[0].harmony,

@@ -2,7 +2,26 @@ export type Harmony = 'complementary' | 'analogous' | 'triadic' | 'split-complem
 export type NeutralStrategy = 'pure' | 'tinted';
 export type ContrastStandard = 'AA' | 'AAA';
 export type ScalePresetId = 'dense' | 'compact' | 'balanced' | 'spacious' | 'editorial';
-export type PaletteSlot = 'brand' | 'harmony-1' | 'harmony-2' | 'support-1' | 'support-2';
+export type PaletteSlot = 'primary' | 'harmony-1' | 'harmony-2' | 'support-1' | 'support-2';
+export type DirectionId = 'precise' | 'quiet' | 'friendly' | 'editorial' | 'bold' | 'organic';
+export type PrimitiveField =
+  | 'color.seed'
+  | 'color.harmony'
+  | 'color.neutralStrategy'
+  | 'color.steps'
+  | 'scalePresetId'
+  | 'spacing.base'
+  | 'spacing.ratio'
+  | 'spacing.count'
+  | 'typography.fontFamily.sans'
+  | 'typography.fontFamily.serif'
+  | 'typography.fontFamily.mono'
+  | 'typography.baseSize'
+  | 'typography.ratio'
+  | 'typography.count'
+  | 'radius.base'
+  | 'radius.ratio'
+  | 'radius.count';
 
 export interface TypographyConfig {
   baseSize: number;
@@ -34,6 +53,8 @@ export interface TypographyConfig {
 
 export interface TokenConfig {
   version: string;
+  directionId?: DirectionId;
+  primitiveLocks?: Partial<Record<PrimitiveField, true>>;
   color: {
     seed: string;
     harmony: Harmony;

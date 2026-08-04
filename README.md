@@ -1,6 +1,6 @@
 # Primitive Token Generator
 
-A local-first Figma plugin that turns one seed color into a stable Variables library of primitive design tokens.
+A local-first Figma plugin that turns one primary color into a stable Variables library of primitive design tokens.
 
 ## Run it in Figma
 
@@ -57,7 +57,7 @@ The generator never reads the Figma document. The main thread never derives toke
 
 This final check requires a live Figma file:
 
-1. Create the library and bind a rectangle fill to `color/brand/500`.
+1. Create the library and bind a rectangle fill to `color/primary/500`.
 2. Change the seed and regenerate.
 3. Confirm the rectangle repaints and the variable ID shown in the plugin console is unchanged.
 4. Reduce ramp steps, confirm the removal dialog reports bound consumers, then choose **Keep and regenerate** and verify updates are applied without removing the older variables.

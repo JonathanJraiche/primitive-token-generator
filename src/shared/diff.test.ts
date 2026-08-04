@@ -5,12 +5,12 @@ import type { PrimitiveToken } from './types';
 describe('diffTokens', () => {
   it('matches by stable name and separates changed, new, unchanged, and removed', () => {
     const existing: ExistingVariableSnapshot[] = [
-      { id: 'stable-id', name: 'color/brand/500', type: 'COLOR', value: '#2d5bff' },
+      { id: 'stable-id', name: 'color/primary/500', type: 'COLOR', value: '#2d5bff' },
       { id: 'same-id', name: 'space/0', type: 'FLOAT', value: 4 },
       { id: 'remove-id', name: 'space/9', type: 'FLOAT', value: 153.8 },
     ];
     const generated: PrimitiveToken[] = [
-      { name: 'color/brand/500', type: 'COLOR', value: '#7c3aed' },
+      { name: 'color/primary/500', type: 'COLOR', value: '#7c3aed' },
       { name: 'space/0', type: 'FLOAT', value: 4 },
       { name: 'radius/0', type: 'FLOAT', value: 2 },
     ];

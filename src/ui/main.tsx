@@ -4,13 +4,25 @@ import { DEFAULT_CONFIG, PRESETS, SCALE_PRESETS } from '../shared/defaults';
 import type {
   MainToUiMessage,
   PaletteSlot,
+  PrimitiveField,
   RemovalCandidate,
   TokenConfig,
   TokenSet,
   UiToMainMessage,
   WriteSummary,
 } from '../shared/types';
-import { generate, toDtcg } from './generator';
+import { generate, randomSeedColor, toDtcg } from './generator';
+import {
+  anchoredCount,
+  composeDirection,
+  DIRECTION_PROFILES,
+  isPaletteAnchorLocked,
+  isPrimitiveLocked,
+  primitiveChangeInfluence,
+  setPaletteAnchor,
+  setPrimitiveLock,
+  togglePaletteAnchor,
+} from './directions';
 import './styles.css';
 
 const post = (message: UiToMainMessage) => parent.postMessage({ pluginMessage: message }, '*');
@@ -57,14 +69,21 @@ function normalizeImportedConfig(value: unknown): TokenConfig {
   }
   const spacing = { ...DEFAULT_CONFIG.spacing, ...candidate.spacing };
   const importedColor = candidate.color as Partial<TokenConfig['color']>;
+  const importedLocks = {
+    ...DEFAULT_CONFIG.color.locks,
+    ...importedColor.locks,
+  } as Record<string, string | undefined>;
+  const legacyPrimaryOverride = importedLocks.primary ?? importedLocks.brand;
+  delete importedLocks.primary;
+  delete importedLocks.brand;
   const color: TokenConfig['color'] = {
     ...DEFAULT_CONFIG.color,
     ...importedColor,
-    locks: {
-      ...DEFAULT_CONFIG.color.locks,
-      ...importedColor.locks,
-    },
+    seed: legacyPrimaryOverride ?? importedColor.seed ?? DEFAULT_CONFIG.color.seed,
+    locks: importedLocks,
   };
+  const primitiveLocks = { ...candidate.primitiveLocks };
+  if (legacyPrimaryOverride) primitiveLocks['color.seed'] = true;
   const importedTypography =
     candidate.typography as Partial<TokenConfig['typography']>;
   const typography: TokenConfig['typography'] = {
@@ -110,8 +129,12 @@ function normalizeImportedConfig(value: unknown): TokenConfig {
   return {
     ...DEFAULT_CONFIG,
     ...candidate,
+    version: DEFAULT_CONFIG.version,
+    primitiveLocks,
     color,
-    scalePresetId: matchingScalePreset?.id,
+    scalePresetId: candidate.primitiveLocks?.scalePresetId
+      ? candidate.scalePresetId
+      : matchingScalePreset?.id,
     spacing,
     typography,
     radius: { ...DEFAULT_CONFIG.radius, ...candidate.radius },
@@ -123,20 +146,99 @@ function normalizeImportedConfig(value: unknown): TokenConfig {
 function Field({
   label,
   hint,
+  locked,
+  onToggleLock,
   children,
 }: {
   label: string;
   hint?: string;
+  locked?: boolean;
+  onToggleLock?: () => void;
   children: React.ReactNode;
 }) {
   return (
     <label className="field">
       <span className="field-label">
-        {label}
-        {hint && <span>{hint}</span>}
+        <span>{label}</span>
+        <span className="field-label-actions">
+          {hint && <span>{hint}</span>}
+          {onToggleLock && (
+            <button
+              type="button"
+              className={`field-lock${locked ? ' locked' : ''}`}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleLock();
+              }}
+              aria-label={`${locked ? 'Unlock' : 'Lock'} ${label}`}
+              aria-pressed={locked}
+              title={`${locked ? 'Unlock' : 'Lock'} ${label}`}
+            >
+              <Icon name={locked ? 'lock' : 'unlock'} size={11} />
+            </button>
+          )}
+        </span>
       </span>
       {children}
     </label>
+  );
+}
+
+function PrimaryColorControl({
+  value,
+  onCommit,
+  onRandomize,
+}: {
+  value: string;
+  onCommit: (value: string) => void;
+  onRandomize: () => void;
+}) {
+  const [draft, setDraft] = useState(value.toUpperCase());
+
+  useEffect(() => setDraft(value.toUpperCase()), [value]);
+
+  const commit = () => {
+    const normalized = normalizeHexInput(draft);
+    if (normalized) onCommit(normalized);
+    else setDraft(value.toUpperCase());
+  };
+
+  return (
+    <div className="seed-input">
+      <input
+        className="color-picker"
+        type="color"
+        value={value}
+        onChange={(event) => onCommit(event.target.value.toUpperCase())}
+        aria-label="Pick primary color"
+      />
+      <input
+        className="hex-input"
+        value={draft}
+        maxLength={7}
+        spellCheck={false}
+        aria-label="Primary color hex value"
+        onFocus={(event) => event.currentTarget.select()}
+        onChange={(event) => setDraft(event.target.value.toUpperCase())}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur();
+          if (event.key === 'Escape') {
+            setDraft(value.toUpperCase());
+            event.currentTarget.blur();
+          }
+        }}
+      />
+      <button
+        type="button"
+        className="randomize-button"
+        onClick={onRandomize}
+        title="Try another primary color"
+      >
+        <Icon name="spark" size={13} /> Randomize
+      </button>
+    </div>
   );
 }
 
@@ -250,35 +352,82 @@ function ConfigPanel({
   onImport: () => void;
   fontFamilies: string[];
 }) {
-  const choosePreset = (preset: (typeof PRESETS)[number]) => {
-    setConfig((current) => ({
-      ...current,
-      color: {
-        ...current.color,
-        seed: preset.seed,
-        harmony: preset.harmony,
-        neutralStrategy: preset.neutralStrategy,
-        presetId: preset.id,
-        paletteRevision: 0,
-        locks: {},
-      },
-    }));
+  const anchorChange = (
+    field: PrimitiveField,
+    update: (current: TokenConfig) => TokenConfig,
+  ) => {
+    setConfig((current) => {
+      const edited = setPrimitiveLock(update(current), field, true);
+      return primitiveChangeInfluence(field, current, edited) === 'system'
+        ? composeDirection(edited, fontFamilies)
+        : edited;
+    });
   };
 
-  const updateColor = (update: Partial<TokenConfig['color']>) =>
-    setConfig((current) => ({
+  const togglePrimitiveLock = (field: PrimitiveField) => {
+    setConfig((current) => {
+      const shouldLock = !isPrimitiveLocked(current, field);
+      return setPrimitiveLock(current, field, shouldLock);
+    });
+  };
+
+  const anchorProps = (field: PrimitiveField) => ({
+    locked: isPrimitiveLocked(config, field),
+    onToggleLock: () => togglePrimitiveLock(field),
+  });
+
+  const generateDirection = () =>
+    setConfig((current) => composeDirection(current, fontFamilies));
+
+  const choosePreset = (preset: (typeof PRESETS)[number]) => {
+    setConfig((current) => {
+      let next: TokenConfig = {
+        ...current,
+        color: {
+          ...current.color,
+          seed: preset.seed,
+          harmony: preset.harmony,
+          neutralStrategy: preset.neutralStrategy,
+          presetId: preset.id,
+          paletteRevision: 0,
+        },
+      };
+      for (const field of [
+        'color.seed',
+        'color.harmony',
+        'color.neutralStrategy',
+      ] as PrimitiveField[]) {
+        next = setPrimitiveLock(next, field, true);
+      }
+      return composeDirection(next, fontFamilies);
+    });
+  };
+
+  const updateColor = (
+    field: Extract<PrimitiveField, `color.${string}`>,
+    update: Partial<TokenConfig['color']>,
+  ) =>
+    anchorChange(field, (current) => ({
       ...current,
       color: { ...current.color, ...update, presetId: undefined },
     }));
 
+  const randomizeColor = () =>
+    updateColor('color.seed', {
+      seed: randomSeedColor(),
+      paletteRevision: 0,
+    });
+
   const chooseScalePreset = (presetId: string) => {
     if (presetId === 'custom') {
-      setConfig((current) => ({ ...current, scalePresetId: undefined }));
+      setConfig((current) =>
+        setPrimitiveLock({ ...current, scalePresetId: undefined }, 'scalePresetId', false),
+      );
       return;
     }
     const preset = SCALE_PRESETS.find((item) => item.id === presetId);
     if (!preset) return;
-    setConfig((current) => ({
+    anchorChange('scalePresetId', (current) => ({
       ...current,
       scalePresetId: preset.id,
       spacing: { ...preset.spacing },
@@ -290,17 +439,21 @@ function ConfigPanel({
     }));
   };
 
-  const updateSpacing = (update: Partial<TokenConfig['spacing']>) =>
-    setConfig((current) => ({
+  const updateSpacing = (
+    field: Extract<PrimitiveField, `spacing.${string}`>,
+    update: Partial<TokenConfig['spacing']>,
+  ) =>
+    anchorChange(field, (current) => ({
       ...current,
-      scalePresetId: undefined,
       spacing: { ...current.spacing, ...update },
     }));
 
-  const updateTypography = (update: Partial<TokenConfig['typography']>) =>
-    setConfig((current) => ({
+  const updateTypography = (
+    field: Extract<PrimitiveField, `typography.${string}`>,
+    update: Partial<TokenConfig['typography']>,
+  ) =>
+    anchorChange(field, (current) => ({
       ...current,
-      scalePresetId: undefined,
       typography: { ...current.typography, ...update },
     }));
 
@@ -308,7 +461,7 @@ function ConfigPanel({
     role: keyof TokenConfig['typography']['fontFamily'],
     value: string,
   ) =>
-    setConfig((current) => ({
+    anchorChange(`typography.fontFamily.${role}`, (current) => ({
       ...current,
       typography: {
         ...current.typography,
@@ -317,6 +470,15 @@ function ConfigPanel({
           [role]: value,
         },
       },
+    }));
+
+  const updateRadius = (
+    field: Extract<PrimitiveField, `radius.${string}`>,
+    update: Partial<TokenConfig['radius']>,
+  ) =>
+    anchorChange(field, (current) => ({
+      ...current,
+      radius: { ...current.radius, ...update },
     }));
 
   const fontFamilyOptions = useMemo(
@@ -335,6 +497,21 @@ function ConfigPanel({
   return (
     <aside className="config-panel">
       <div className="panel-scroll">
+        <section className="direction-section">
+          <div className="direction-copy">
+            <span>START ANYWHERE</span>
+            <strong>
+              {config.directionId
+                ? `${DIRECTION_PROFILES.find((profile) => profile.id === config.directionId)?.name ?? 'Generated'} direction`
+                : 'Open direction'}
+            </strong>
+            <p>Change any value to anchor it. Unlocked primitives adapt around your choices.</p>
+          </div>
+          <button className="direction-button" onClick={generateDirection}>
+            <Icon name="spark" size={14} /> Generate another direction
+          </button>
+          <small>{anchoredCount(config)} anchored</small>
+        </section>
         <section className="config-section first">
           <div className="section-heading">
             <h2>Color</h2>
@@ -352,30 +529,21 @@ function ConfigPanel({
               </button>
             ))}
           </div>
-          <Field label="Seed color">
-            <div className="seed-input">
-              <input
-                className="color-picker"
-                type="color"
-                value={config.color.seed}
-                onChange={(event) => updateColor({ seed: event.target.value.toUpperCase() })}
-                aria-label="Pick seed color"
-              />
-              <input
-                className="hex-input"
-                value={config.color.seed}
-                maxLength={7}
-                spellCheck={false}
-                onChange={(event) => updateColor({ seed: event.target.value.toUpperCase() })}
-              />
-            </div>
+          <Field label="Primary" {...anchorProps('color.seed')}>
+            <PrimaryColorControl
+              value={config.color.seed}
+              onCommit={(seed) => updateColor('color.seed', { seed })}
+              onRandomize={randomizeColor}
+            />
           </Field>
           <div className="field-row">
-            <Field label="Harmony">
+            <Field label="Harmony" {...anchorProps('color.harmony')}>
               <select
                 value={config.color.harmony}
                 onChange={(event) =>
-                  updateColor({ harmony: event.target.value as TokenConfig['color']['harmony'] })
+                  updateColor('color.harmony', {
+                    harmony: event.target.value as TokenConfig['color']['harmony'],
+                  })
                 }
               >
                 <option value="analogous">Analogous</option>
@@ -384,11 +552,11 @@ function ConfigPanel({
                 <option value="split-complementary">Split complementary</option>
               </select>
             </Field>
-            <Field label="Neutrals">
+            <Field label="Neutrals" {...anchorProps('color.neutralStrategy')}>
               <select
                 value={config.color.neutralStrategy}
                 onChange={(event) =>
-                  updateColor({
+                  updateColor('color.neutralStrategy', {
                     neutralStrategy: event.target.value as TokenConfig['color']['neutralStrategy'],
                   })
                 }
@@ -398,20 +566,20 @@ function ConfigPanel({
               </select>
             </Field>
           </div>
-          <Field label="Ramp steps" hint="5–15">
+          <Field label="Ramp steps" hint="5–15" {...anchorProps('color.steps')}>
             <NumberInput
               value={config.color.steps}
               min={5}
               max={15}
-              onChange={(steps) => updateColor({ steps })}
+              onChange={(steps) => updateColor('color.steps', { steps })}
             />
           </Field>
         </section>
 
         <section className="config-section">
-          <h2 className="section-title">Scales</h2>
+          <h2 className="section-title">System</h2>
           <div className="scale-preset">
-            <Field label="Scale preset" hint="spacing + type">
+            <Field label="Density" hint="spacing + type" {...anchorProps('scalePresetId')}>
               <select
                 value={config.scalePresetId ?? 'custom'}
                 onChange={(event) => chooseScalePreset(event.target.value)}
@@ -428,14 +596,14 @@ function ConfigPanel({
           <div className="scale-block">
             <div className="scale-title"><span>Spacing</span><small>Modular</small></div>
             <div className="triple-fields">
-              <Field label="Base"><NumberInput value={config.spacing.base} min={1} max={32} suffix="px" onChange={(base) => updateSpacing({ base })} /></Field>
-              <Field label="Ratio"><NumberInput value={config.spacing.ratio} min={1} max={3} step={0.001} onChange={(ratio) => updateSpacing({ ratio })} /></Field>
-              <Field label="Count"><NumberInput value={config.spacing.count} min={1} max={16} onChange={(count) => updateSpacing({ count })} /></Field>
+              <Field label="Base" {...anchorProps('spacing.base')}><NumberInput value={config.spacing.base} min={1} max={32} suffix="px" onChange={(base) => updateSpacing('spacing.base', { base })} /></Field>
+              <Field label="Ratio" {...anchorProps('spacing.ratio')}><NumberInput value={config.spacing.ratio} min={1} max={3} step={0.001} onChange={(ratio) => updateSpacing('spacing.ratio', { ratio })} /></Field>
+              <Field label="Count" {...anchorProps('spacing.count')}><NumberInput value={config.spacing.count} min={1} max={16} onChange={(count) => updateSpacing('spacing.count', { count })} /></Field>
             </div>
           </div>
           <div className="scale-block">
             <div className="scale-title"><span>Typography</span><small>px + rem</small></div>
-            <Field label="Sans family">
+            <Field label="Primary font" {...anchorProps('typography.fontFamily.sans')}>
               <select
                 value={config.typography.fontFamily.sans}
                 onChange={(event) => updateFontFamily('sans', event.target.value)}
@@ -445,7 +613,7 @@ function ConfigPanel({
                 ))}
               </select>
             </Field>
-            <Field label="Serif family">
+            <Field label="Serif font" {...anchorProps('typography.fontFamily.serif')}>
               <select
                 value={config.typography.fontFamily.serif}
                 onChange={(event) => updateFontFamily('serif', event.target.value)}
@@ -455,7 +623,7 @@ function ConfigPanel({
                 ))}
               </select>
             </Field>
-            <Field label="Mono family">
+            <Field label="Mono font" {...anchorProps('typography.fontFamily.mono')}>
               <select
                 value={config.typography.fontFamily.mono}
                 onChange={(event) => updateFontFamily('mono', event.target.value)}
@@ -466,17 +634,17 @@ function ConfigPanel({
               </select>
             </Field>
             <div className="triple-fields">
-              <Field label="Base"><NumberInput value={config.typography.baseSize} min={8} max={32} suffix="px" onChange={(baseSize) => updateTypography({ baseSize })} /></Field>
-              <Field label="Ratio"><NumberInput value={config.typography.ratio} min={1} max={2} step={0.001} onChange={(ratio) => updateTypography({ ratio })} /></Field>
-              <Field label="Count"><NumberInput value={config.typography.count} min={1} max={12} onChange={(count) => updateTypography({ count })} /></Field>
+              <Field label="Base" {...anchorProps('typography.baseSize')}><NumberInput value={config.typography.baseSize} min={8} max={32} suffix="px" onChange={(baseSize) => updateTypography('typography.baseSize', { baseSize })} /></Field>
+              <Field label="Ratio" {...anchorProps('typography.ratio')}><NumberInput value={config.typography.ratio} min={1} max={2} step={0.001} onChange={(ratio) => updateTypography('typography.ratio', { ratio })} /></Field>
+              <Field label="Count" {...anchorProps('typography.count')}><NumberInput value={config.typography.count} min={1} max={12} onChange={(count) => updateTypography('typography.count', { count })} /></Field>
             </div>
           </div>
           <div className="scale-block">
             <div className="scale-title"><span>Radius</span><small>Modular</small></div>
             <div className="triple-fields">
-              <Field label="Base"><NumberInput value={config.radius.base} min={0} max={32} suffix="px" onChange={(base) => setConfig((c) => ({ ...c, radius: { ...c.radius, base } }))} /></Field>
-              <Field label="Ratio"><NumberInput value={config.radius.ratio} min={1} max={4} step={0.25} onChange={(ratio) => setConfig((c) => ({ ...c, radius: { ...c.radius, ratio } }))} /></Field>
-              <Field label="Count"><NumberInput value={config.radius.count} min={1} max={12} onChange={(count) => setConfig((c) => ({ ...c, radius: { ...c.radius, count } }))} /></Field>
+              <Field label="Base" {...anchorProps('radius.base')}><NumberInput value={config.radius.base} min={0} max={32} suffix="px" onChange={(base) => updateRadius('radius.base', { base })} /></Field>
+              <Field label="Ratio" {...anchorProps('radius.ratio')}><NumberInput value={config.radius.ratio} min={1} max={4} step={0.25} onChange={(ratio) => updateRadius('radius.ratio', { ratio })} /></Field>
+              <Field label="Count" {...anchorProps('radius.count')}><NumberInput value={config.radius.count} min={1} max={12} onChange={(count) => updateRadius('radius.count', { count })} /></Field>
             </div>
           </div>
         </section>
@@ -493,10 +661,12 @@ function RampPreview({
   tokenSet,
   config,
   setConfig,
+  fontFamilies,
 }: {
   tokenSet: TokenSet;
   config: TokenConfig;
   setConfig: React.Dispatch<React.SetStateAction<TokenConfig>>;
+  fontFamilies: string[];
 }) {
   const ramps = useMemo(() => {
     const result = new Map<string, TokenSet['tokens']>();
@@ -510,36 +680,16 @@ function RampPreview({
   }, [tokenSet]);
 
   const setPaletteColor = (id: PaletteSlot, value: string) => {
-    setConfig((current) => ({
-      ...current,
-      color: {
-        ...current.color,
-        presetId: undefined,
-        locks: {
-          ...current.color.locks,
-          [id]: value.toUpperCase(),
-        },
-      },
-    }));
+    setConfig((current) => {
+      const anchored = setPaletteAnchor(current, id, value);
+      return id === 'primary'
+        ? composeDirection(anchored, fontFamilies)
+        : anchored;
+    });
   };
 
   const togglePaletteLock = (id: PaletteSlot, value: string) => {
-    setConfig((current) => {
-      const locks = { ...current.color.locks };
-      if (locks[id]) {
-        delete locks[id];
-      } else {
-        locks[id] = value.toUpperCase();
-      }
-      return {
-        ...current,
-        color: {
-          ...current.color,
-          presetId: undefined,
-          locks,
-        },
-      };
-    });
+    setConfig((current) => togglePaletteAnchor(current, id, value));
   };
 
   const regeneratePalette = () => {
@@ -568,7 +718,7 @@ function RampPreview({
         </div>
         <div className="palette-strip">
           {tokenSet.palette.map((color) => {
-            const locked = Boolean(config.color.locks?.[color.id]);
+            const locked = isPaletteAnchorLocked(config, color.id);
             return (
               <div className="palette-color" key={color.id}>
                 <div className="palette-swatch" style={{ background: color.value }}>
@@ -908,6 +1058,7 @@ function App() {
                 tokenSet={visibleTokenSet}
                 config={config}
                 setConfig={setConfig}
+                fontFamilies={fontFamilies}
               />
             ) : (
               <ContrastPanel

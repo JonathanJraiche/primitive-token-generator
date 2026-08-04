@@ -6,6 +6,7 @@ import type {
   TokenConfig,
   TokenSet,
 } from '../shared/types';
+import { densityRuleFor } from './density';
 
 type OklchColor = { mode: 'oklch'; l: number; c: number; h: number; alpha?: number };
 
@@ -15,7 +16,7 @@ const WHITE = '#ffffff';
 const NEAR_BLACK = '#111827';
 const STANDARD_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 const PALETTE_SLOTS: Array<{ id: PaletteSlot; label: string }> = [
-  { id: 'brand', label: 'Brand' },
+  { id: 'primary', label: 'Primary' },
   { id: 'harmony-1', label: 'Harmony 1' },
   { id: 'harmony-2', label: 'Harmony 2' },
   { id: 'support-1', label: 'Support 1' },
@@ -77,6 +78,16 @@ export function contrastRatio(a: string, b: string): number {
 
 function inSrgb(color: OklchColor): OklchColor {
   return clampChroma(color, 'oklch', 'rgb') as OklchColor;
+}
+
+export function randomSeedColor(random: () => number = Math.random): string {
+  const color: OklchColor = {
+    mode: 'oklch',
+    h: random() * 360,
+    l: 0.56 + random() * 0.14,
+    c: 0.14 + random() * 0.08,
+  };
+  return formatHex(inSrgb(color)).toUpperCase();
 }
 
 function resolvedColor(color: OklchColor): { hex: string; oklch: OklchColor } {
@@ -144,17 +155,26 @@ function ramp(
   });
 }
 
-function paletteHueOffsets(harmony: TokenConfig['color']['harmony']): number[] {
+function paletteHueOffsets(
+  harmony: TokenConfig['color']['harmony'],
+  spreadScale = 1,
+): number[] {
+  let offsets: number[];
   switch (harmony) {
     case 'complementary':
-      return [0, 180, 150, 210, 30];
+      offsets = [0, 180, 150, 210, 30];
+      break;
     case 'analogous':
-      return [0, -30, 30, -60, 60];
+      offsets = [0, -30, 30, -60, 60];
+      break;
     case 'triadic':
-      return [0, 120, 240, 60, 300];
+      offsets = [0, 120, 240, 60, 300];
+      break;
     case 'split-complementary':
-      return [0, 150, 210, 30, 330];
+      offsets = [0, 150, 210, 30, 330];
+      break;
   }
+  return offsets.map((offset) => offset * spreadScale);
 }
 
 function seededUnit(value: string): number {
@@ -181,9 +201,13 @@ function buildPalette(
   hex: string;
   oklch: OklchColor;
 }> {
-  const offsets = paletteHueOffsets(config.color.harmony);
+  const density = densityRuleFor(config.scalePresetId);
+  const offsets = paletteHueOffsets(
+    config.color.harmony,
+    density.palette.hueSpreadScale,
+  );
   return PALETTE_SLOTS.map((slot, index) => {
-    const lockedHex = config.color.locks?.[slot.id];
+    const lockedHex = slot.id === 'primary' ? undefined : config.color.locks?.[slot.id];
     if (lockedHex) {
       const locked = toOklch(lockedHex);
       if (locked) {
@@ -200,19 +224,24 @@ function buildPalette(
     const revision = Number.isFinite(config.color.paletteRevision)
       ? Math.max(0, Math.floor(config.color.paletteRevision))
       : 0;
-    if (slot.id === 'brand' && revision === 0) {
+    if (slot.id === 'primary') {
       const anchor = resolvedColor(seed);
       return { ...slot, hex: anchor.hex, oklch: anchor.oklch };
     }
     const variation = revision === 0 ? 0 : 1;
     const key = `${config.color.seed}:${config.color.harmony}:${revision}:${slot.id}`;
-    const hueJitter = (seededUnit(`${key}:h`) - 0.5) * 28 * variation;
+    const hueJitter =
+      (seededUnit(`${key}:h`) - 0.5) * 28 * variation * density.palette.hueSpreadScale;
     const lightnessJitter = (seededUnit(`${key}:l`) - 0.5) * 0.12 * variation;
-    const chromaFactor = 1 + (seededUnit(`${key}:c`) - 0.5) * 0.28 * variation;
+    const slotChromaScale = slot.id.startsWith('support')
+      ? density.palette.supportChromaScale
+      : 1;
+    const chromaFactor =
+      (1 + (seededUnit(`${key}:c`) - 0.5) * 0.28 * variation) * slotChromaScale;
     const anchor = resolvedColor({
       mode: 'oklch',
       l: Math.max(0.38, Math.min(0.78, seed.l + lightnessJitter)),
-      c: Math.max(0.045, baseChroma * chromaFactor),
+      c: Math.max(0.035, baseChroma * chromaFactor),
       h: normalizeHue(seed.h + offsets[index] + hueJitter),
     });
     return { ...slot, hex: anchor.hex, oklch: anchor.oklch };
@@ -297,9 +326,11 @@ function buildContrast(tokens: PrimitiveToken[]): ContrastResult[] {
 export function generate(config: TokenConfig): TokenSet {
   assertConfig(config);
   const seed = toOklch(config.color.seed);
-  if (!seed || seed.h === undefined) throw new Error('The seed color could not be converted.');
+  if (!seed || seed.h === undefined) throw new Error('The primary color could not be converted.');
 
-  const baseChroma = Math.max(0.09, Math.min(seed.c || 0.14, 0.23));
+  const density = densityRuleFor(config.scalePresetId);
+  const baseChroma =
+    Math.max(0.09, Math.min(seed.c || 0.14, 0.23)) * density.palette.chromaScale;
   const palette = buildPalette(
     config,
     { mode: 'oklch', l: seed.l, c: seed.c, h: seed.h },
@@ -319,7 +350,7 @@ export function generate(config: TokenConfig): TokenSet {
     ...ramp(
       'neutral',
       seed.h,
-      config.color.neutralStrategy === 'tinted' ? 0.022 : 0,
+      config.color.neutralStrategy === 'tinted' ? density.palette.neutralChroma : 0,
       config.color.steps,
     ),
     ...ramp('green', 145, 0.16, config.color.steps),

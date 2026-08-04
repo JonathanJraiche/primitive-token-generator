@@ -57,7 +57,7 @@
       <rect x="62" width="52" height="52" rx="12" fill="#7C3AED"/>
       <rect x="124" width="52" height="52" rx="12" fill="#059669"/>
     </g>
-    <text x="52" y="276" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">Seed color</text>
+    <text x="52" y="276" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">Primary</text>
     <rect x="52" y="291" width="196" height="44" rx="10" fill="#FFFFFF" stroke="#D9DDE7"/>
     <circle cx="75" cy="313" r="11" fill="#2D5BFF"/>
     <text x="96" y="319" fill="#161A24" font-family="ui-monospace, monospace" font-size="14">#2D5BFF</text>
@@ -75,7 +75,7 @@
       <text x="0" y="58" fill="#7B8290" font-family="Inter, Arial, sans-serif" font-size="13">OKLCH · hue-preserving sRGB mapping</text>
 
       <g transform="translate(0 92)">
-        <text x="0" y="17" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="650">brand</text>
+        <text x="0" y="17" fill="#596174" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="650">primary</text>
         <rect y="32" width="50" height="78" rx="10" fill="#F3F6FF"/>
         <rect x="58" y="32" width="50" height="78" rx="10" fill="#D5E0FF"/>
         <rect x="116" y="32" width="50" height="78" rx="10" fill="#AFC2FF"/>

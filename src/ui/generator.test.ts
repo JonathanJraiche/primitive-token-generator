@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, PRESETS, SCALE_PRESETS } from '../shared/defaults';
-import { generate, toDtcg } from './generator';
+import { generate, randomSeedColor, toDtcg } from './generator';
+
+describe('randomSeedColor', () => {
+  it('returns a useful six-digit seed and supports deterministic testing', () => {
+    const values = [0.25, 0.5, 0.75];
+    let index = 0;
+    const color = randomSeedColor(() => values[index++] ?? 0.5);
+
+    expect(color).toMatch(/^#[0-9A-F]{6}$/);
+    expect(randomSeedColor(() => 0.5)).toBe(randomSeedColor(() => 0.5));
+  });
+});
 
 describe('generate', () => {
   it('is deterministic for the same recipe', () => {
@@ -28,15 +39,46 @@ describe('generate', () => {
     expect(guaranteed.every((pair) => pair.aa && pair.ratio >= 4.5)).toBe(true);
   });
 
-  it('keeps the input seed at brand/500', () => {
-    const token = generate(DEFAULT_CONFIG).tokens.find((item) => item.name === 'color/brand/500');
+  it('keeps the input seed at primary/500', () => {
+    const token = generate(DEFAULT_CONFIG).tokens.find((item) => item.name === 'color/primary/500');
     expect(String(token?.value).toLowerCase()).toBe(DEFAULT_CONFIG.color.seed.toLowerCase());
+  });
+
+  it('keeps the seed as the primary anchor when the palette is regenerated', () => {
+    const token = generate({
+      ...DEFAULT_CONFIG,
+      color: { ...DEFAULT_CONFIG.color, paletteRevision: 4 },
+    }).tokens.find((item) => item.name === 'color/primary/500');
+    expect(String(token?.value).toLowerCase()).toBe(DEFAULT_CONFIG.color.seed.toLowerCase());
+  });
+
+  it('uses a quieter supporting palette for dense systems than spacious systems', () => {
+    const makeConfig = (scalePresetId: 'dense' | 'spacious') => ({
+      ...DEFAULT_CONFIG,
+      scalePresetId,
+      color: {
+        ...DEFAULT_CONFIG.color,
+        harmony: 'analogous' as const,
+        neutralStrategy: 'tinted' as const,
+      },
+    });
+    const dense = generate(makeConfig('dense'));
+    const spacious = generate(makeConfig('spacious'));
+    const supportingChroma = (tokenSet: typeof dense) =>
+      tokenSet.tokens
+        .filter((token) => /color\/(harmony|support)-\d\/500/.test(token.name))
+        .reduce((sum, token) => sum + (token.oklch?.c ?? 0), 0);
+
+    expect(supportingChroma(dense)).toBeLessThan(supportingChroma(spacious));
+    expect(
+      dense.tokens.find((token) => token.name === 'color/neutral/500')?.oklch?.c,
+    ).toBe(0);
   });
 
   it('generates five stable palette anchors', () => {
     const palette = generate(DEFAULT_CONFIG).palette;
     expect(palette.map((color) => color.id)).toEqual([
-      'brand',
+      'primary',
       'harmony-1',
       'harmony-2',
       'support-1',
@@ -51,7 +93,7 @@ describe('generate', () => {
       color: {
         ...DEFAULT_CONFIG.color,
         paletteRevision: 1,
-        locks: { brand: '#DF9A57' },
+        locks: { 'harmony-1': '#DF9A57' },
       },
     };
     const secondConfig = {
@@ -66,10 +108,10 @@ describe('generate', () => {
     const second = generate(secondConfig);
 
     expect(first).toEqual(repeated);
-    expect(first.palette.find((color) => color.id === 'brand')?.value).toBe('#df9a57');
-    expect(second.palette.find((color) => color.id === 'brand')?.value).toBe('#df9a57');
-    expect(first.palette.find((color) => color.id === 'harmony-1')?.value).not.toBe(
-      second.palette.find((color) => color.id === 'harmony-1')?.value,
+    expect(first.palette.find((color) => color.id === 'harmony-1')?.value).toBe('#df9a57');
+    expect(second.palette.find((color) => color.id === 'harmony-1')?.value).toBe('#df9a57');
+    expect(first.palette.find((color) => color.id === 'harmony-2')?.value).not.toBe(
+      second.palette.find((color) => color.id === 'harmony-2')?.value,
     );
   });
 
@@ -121,12 +163,12 @@ describe('generate', () => {
 
   it('emits DTCG groups with typed color and dimension leaves', () => {
     const output = toDtcg(generate(DEFAULT_CONFIG)) as Record<string, any>;
-    expect(output.color.brand['500'].$type).toBe('color');
-    expect(output.color.brand['500'].$value).toMatchObject({
+    expect(output.color.primary['500'].$type).toBe('color');
+    expect(output.color.primary['500'].$value).toMatchObject({
       colorSpace: 'srgb',
       alpha: 1,
     });
-    expect(output.color.brand['500'].$value.components).toHaveLength(3);
+    expect(output.color.primary['500'].$value.components).toHaveLength(3);
     expect(output.space['0'].$type).toBe('dimension');
     expect(output.space['0'].$value).toEqual({ value: 4, unit: 'px' });
     expect(output['font-family'].sans).toEqual({

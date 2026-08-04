@@ -22,7 +22,7 @@ Design tools
 
 **Description**
 
-Primitive Token Generator turns one seed color into a stable, accessible Figma Variables library for a new product or design system.
+Primitive Token Generator turns one primary color into a stable, accessible Figma Variables library for a new product or design system.
 
 Choose a curated color and scale preset or tune the recipe yourself. The plugin creates deterministic OKLCH color ramps, neutrals, feedback colors, spacing, typography, and radius primitives. Regenerate safely as the system evolves: existing variables update in place, preserving their IDs and bindings.
 
@@ -67,7 +67,7 @@ Figma currently recommends:
 
 Recommended carousel story:
 
-1. Seed color and palette preview
+1. Primary color and palette preview
 2. Spacing and typography preset controls
 3. WCAG contrast view
 4. Generated Variables collection
@@ -97,7 +97,7 @@ This verifies TypeScript, tests, the production build, manifest requirements, ge
 - [ ] Verify `manifest.json` uses the Figma-assigned development plugin ID.
 - [ ] Test in a new blank Figma Design file.
 - [ ] Generate the default library and confirm all Variables are created.
-- [ ] Bind `color/brand/500` to a canvas layer, change the seed, and confirm the layer updates without changing the variable ID.
+- [ ] Bind `color/primary/500` to a canvas layer, change the primary color, and confirm the layer updates without changing the variable ID.
 - [ ] Reduce a scale count and choose **Keep and regenerate**; confirm other changes apply and older variables remain.
 - [ ] Repeat the removal flow with **Remove and regenerate**; confirm the summary and canvas-binding warning are accurate.
 - [ ] Export and re-import a recipe.
